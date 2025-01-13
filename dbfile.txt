@@ -1,0 +1,66 @@
+database
+
+
+-- Drop existing tables if they exist
+drop table if exists appointments;
+drop table if exists available_slots;
+drop table if exists profiles;
+
+-- Create profiles table
+create table profiles (
+  id uuid references auth.users on delete cascade primary key,
+  role text check (role in ('Patient', 'Doctor')),
+  first_name text,
+  last_name text,
+  email text,
+  specialty text,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- Create available slots table with explicit foreign key
+create table available_slots (
+  id uuid default uuid_generate_v4() primary key,
+  doctor_id uuid references profiles(id) on delete cascade,
+  date date not null,
+  time time not null,
+  duration integer not null default 30,
+  is_booked boolean default false,
+  notes text,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- Create appointments table
+create table appointments (
+  id uuid default uuid_generate_v4() primary key,
+  patient_id uuid references profiles(id) on delete cascade,
+  slot_id uuid references available_slots(id) on delete cascade,
+  status text default 'pending' check (status in ('pending', 'confirmed', 'cancelled')),
+  notes text,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- Enable RLS
+alter table profiles enable row level security;
+alter table available_slots enable row level security;
+alter table appointments enable row level security;
+
+-- Create basic policies
+create policy "Enable all access for authenticated users" on profiles
+  for all using (auth.role() = 'authenticated');
+
+create policy "Enable all access for authenticated users" on available_slots
+  for all using (auth.role() = 'authenticated');
+
+create policy "Enable all access for authenticated users" on appointments
+  for all using (auth.role() = 'authenticated');
+
+
+
+  create table slot_history (
+  id uuid default uuid_generate_v4() primary key,
+  slot_id uuid references available_slots(id) on delete cascade,
+  status text not null,
+  notes text,
+  changed_at timestamp with time zone default timezone('utc'::text, now()),
+  changed_by uuid references auth.users(id)
+);
