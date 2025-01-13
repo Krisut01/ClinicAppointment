@@ -225,7 +225,7 @@ async function handleRegister() {
 
                     <!-- Role Selection -->
                     <div class="role-selection mb-6">
-                      <label class="text-subtitle-1 mb-3 d-block">I want to register as:</label>
+                      <!-- <label class="text-subtitle-1 mb-3 d-block">I want to register as:</label> -->
                       <div class="role-cards">
                         <v-card
                           v-for="role in roles"

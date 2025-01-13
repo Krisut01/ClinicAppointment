@@ -140,7 +140,7 @@ async function handleLogin() {
 
                     <!-- Role Selection -->
                     <div class="role-selection mb-6">
-                      <label class="text-subtitle-1 mb-3 d-block">I am a:</label>
+                      <!-- <label class="text-subtitle-1 mb-3 d-block">I am a:</label> -->
                       <div class="role-cards">
                         <v-card
                           v-for="role in roles"

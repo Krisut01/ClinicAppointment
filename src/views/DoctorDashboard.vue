@@ -841,10 +841,10 @@ onMounted(async () => {
                 <v-icon icon="mdi-calendar-arrow-right" class="mr-2"></v-icon>
                 Upcoming Slots
               </v-tab>
-              <v-tab value="past">
+              <!-- <v-tab value="past">
                 <v-icon icon="mdi-calendar-arrow-left" class="mr-2"></v-icon>
                 Past Slots
-              </v-tab>
+              </v-tab> -->
             </v-tabs>
 
             <v-window v-model="activeTab">
