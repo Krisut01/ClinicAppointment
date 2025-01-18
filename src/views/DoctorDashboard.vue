@@ -212,24 +212,31 @@ async function addTimeSlot() {
     loading.value = true
     const user = await getAuthUser()
 
-    // Validate the date
-    const slotDate = new Date(newSlot.value.date)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    // Convert selected date to Philippine Time (PHT, UTC+8)
+    const slotDate = new Date(newSlot.value.date);
+    const timeValue = typeof newSlot.value.time === 'object' ? newSlot.value.time.value : newSlot.value.time;
+
+    // Set time in the slot date
+    const [hour, minute] = timeValue.split(':');  // Assuming time format is "HH:MM"
+    slotDate.setHours(hour, minute, 0, 0); // Adjust the time to the selected time (ignoring seconds and milliseconds)
+
+    // Adjust to Philippine Time (UTC+8)
+    const timezoneOffset = 8 * 60; // UTC+8 offset in minutes
+    const phtDate = new Date(slotDate.getTime() + (timezoneOffset - slotDate.getTimezoneOffset()) * 60000);
+
+    // Validate that the slot date is not in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
-    if (slotDate < today) {
+    if (phtDate < today) {
       throw new Error('Cannot create slots for past dates')
     }
 
-    // Get the time value from the selected time object
-    const timeValue = typeof newSlot.value.time === 'object' ? 
-      newSlot.value.time.value : newSlot.value.time
-
-    // Check for existing slot
+    // Check for existing slot (ensure unique slot per time)
     const { data: existingSlot } = await supabase
       .from('available_slots')
       .select('id')
-      .eq('date', newSlot.value.date)
+      .eq('date', phtDate.toISOString())  // Use the correct time-adjusted date
       .eq('time', timeValue)
       .eq('doctor_id', user.id)
       .maybeSingle()
@@ -238,12 +245,12 @@ async function addTimeSlot() {
       throw new Error('You already have a slot at this time')
     }
 
-    // Add new slot
+    // Add the new slot to the database
     const { error: insertError } = await supabase
       .from('available_slots')
       .insert({
         doctor_id: user.id,
-        date: newSlot.value.date,
+        date: phtDate.toISOString(),  // Ensure date is stored in ISO format after adjustment
         time: timeValue,
         duration: newSlot.value.duration || 30,
         notes: newSlot.value.notes?.trim() || '',
@@ -260,7 +267,7 @@ async function addTimeSlot() {
       notes: '' 
     }
 
-    // Refresh data
+    // Refresh data (if needed)
     await fetchMySlots()
 
     // Clear any existing error
@@ -272,6 +279,7 @@ async function addTimeSlot() {
     loading.value = false
   }
 }
+
 
 async function updateAppointmentStatus(appointment, newStatus) {
   if (!appointment?.id) return;
@@ -841,10 +849,10 @@ onMounted(async () => {
                 <v-icon icon="mdi-calendar-arrow-right" class="mr-2"></v-icon>
                 Upcoming Slots
               </v-tab>
-              <v-tab value="past">
+              <!-- <v-tab value="past">
                 <v-icon icon="mdi-calendar-arrow-left" class="mr-2"></v-icon>
                 Past Slots
-              </v-tab>
+              </v-tab> -->
             </v-tabs>
 
             <v-window v-model="activeTab">
